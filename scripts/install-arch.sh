@@ -1,9 +1,10 @@
 #!/bin/bash
 # This script installs Klipper on an Arch Linux system
+set -x
 
 PYTHONDIR="${HOME}/klippy-env"
 SYSTEMDDIR="/etc/systemd/system"
-AURCLIENT="pamac"
+AURCLIENT="yay"
 KLIPPER_USER=$USER
 KLIPPER_GROUP=$KLIPPER_USER
 
@@ -11,7 +12,7 @@ KLIPPER_GROUP=$KLIPPER_USER
 install_packages()
 {
     # Packages for python cffi
-    PKGLIST="python2-virtualenv libffi base-devel"
+    PKGLIST="python-virtualenv libffi base-devel"
     # kconfig requirements
     PKGLIST="${PKGLIST} ncurses"
     # hub-ctrl
@@ -22,11 +23,13 @@ install_packages()
     AURLIST="stm32flash"
     PKGLIST="${PKGLIST} arm-none-eabi-newlib"
     PKGLIST="${PKGLIST} arm-none-eabi-gcc arm-none-eabi-binutils"
+    PKGLIST="${PKGLIST} python-cffi python-pyserial python-greenlet python-jinja python-pycparser python-wrapt"
+    AURLIST="${AURLIST} python-aenum python-can"
 
     # Install desired packages
      report_status "Installing packages..."
-     sudo pacman -S ${PKGLIST}
-     $AURCLIENT build ${AURLIST}
+     sudo pacman -S --needed --noconfirm ${PKGLIST}
+     $AURCLIENT -S --needed --noconfirm --removemake ${AURLIST}
 }
 
 # Step 2: Create python virtual environment
@@ -35,7 +38,7 @@ create_virtualenv()
     report_status "Updating python virtual environment..."
 
     # Create virtualenv if it doesn't already exist
-    [ ! -d ${PYTHONDIR} ] && virtualenv2 ${PYTHONDIR}
+    [ ! -d ${PYTHONDIR} ] && virtualenv ${PYTHONDIR}
 
     # Install/update dependencies
     ${PYTHONDIR}/bin/pip install -r ${SRCDIR}/scripts/klippy-requirements.txt
@@ -90,7 +93,7 @@ verify_ready()
 
 # Force script to exit if an error occurs
 set -e
-
+sudo pacman -Syu --noconfirm
 # Find SRCDIR from the pathname of this script
 SRCDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
 
